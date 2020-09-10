@@ -1,6 +1,6 @@
 from typing import Optional
-from pydantic import BaseModel
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -15,13 +15,6 @@ class Item(BaseModel):
 
 db = {}
 
-external_data = {
-    "name": "joao",
-    "description": "Ola",
-    "price": 10,
-    "tax": 0,
-}
-
 @app.get("/")
 async def read_root():
     return db
@@ -34,8 +27,9 @@ async def read_item(item_id: int, q: Optional[str] = None):
 
 
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+async def update_item(item_id: int,item: Item):
+    db[item_id] = item
+    return db
 
 
 @app.post("/items/{item_id}")
