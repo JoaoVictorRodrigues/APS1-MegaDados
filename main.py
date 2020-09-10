@@ -6,39 +6,57 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
-class Item(BaseModel):
-    name: str
-    description: Optional[str] = None
-    price: float
-    tax: Optional[float] = None
+class Tarefa(BaseModel):
+    id: int
+    desTarefa: str
+    finalizado: bool
 
+dbTarefas = {}
 
-db = {}
-
-@app.get("/")
+# Mostra todas as notas
+@app.get("/tarefas/")
 async def read_root():
-    return db
+    if len(dbTarefas) == 0:
+        return {"Insira novas tarefas"}
+    else:
+        return dbTarefas
 
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int, q: Optional[str] = None):
-    selected = db[item_id]
+# Mostra uma unica tarefa
+@app.get("/tarefa/{tarefa_id}")
+async def read_tarefa(tarefa_id: int, q: Optional[str] = None):
+    selected = dbTarefas[tarefa_id]
     return selected
 
-
-@app.put("/items/{item_id}")
-async def update_item(item_id: int,item: Item):
-    db[item_id] = item
-    return db
-
-
-@app.post("/items/{item_id}")
-async def create_item(item_id: int,item: Item):
-    db[item_id+1]=(item)
-    return len(db)
+# Mostra uma unica tarefa
+@app.get("/tarefa/teste")
+async def filter_tarefa():
+    fiil = dbTarefas[0]
+    return fiil
 
 
-@app.delete("/items/{item_id}")
-def delete_item(item_id: int):
-    del(db[item_id])
-    return db
+# Edita uma tarefa
+@app.put("/tarefa/editar/{tarefa_id}")
+async def update_tarefa(tarefa_id: int,tarefa: Tarefa):
+
+    if tarefa_id in dbTarefas:
+        dbTarefas[tarefa_id]= tarefa
+    else:
+        return{"Tarefa não encontrada"}
+    return dbTarefas
+
+#Cria uma tarefa
+@app.post("/tarefa/nova")
+async def create_tarefa(tarefa: Tarefa):
+    if len(dbTarefas) == 0:
+        dbTarefas[0]=tarefa
+    elif len(dbTarefas) in dbTarefas:
+        dbTarefas[len(dbTarefas)+1] = tarefa
+    else:
+        dbTarefas[len(dbTarefas)] = tarefa
+    return len(dbTarefas)
+
+# Apaga uma tarefa
+@app.delete("/tarefa/{tarefa_id}")
+def delete_tarefa(tarefa_id: int):
+    del(dbTarefas[tarefa_id])
+    return dbTarefas
