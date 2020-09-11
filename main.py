@@ -47,12 +47,10 @@ async def update_tarefa(tarefa_id: int,tarefa: Tarefa):
 #Cria uma tarefa
 @app.post("/tarefa/nova")
 async def create_tarefa(tarefa: Tarefa):
-    cont=1
     if len(dbTarefas) == 0:
         dbTarefas[0]=tarefa
     else:
-        dbTarefas[cont] = tarefa
-        cont+=1
+        dbTarefas[max(dbTarefas.keys())+1] = tarefa
     return len(dbTarefas)
 
 # Apaga uma tarefa
