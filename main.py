@@ -27,11 +27,11 @@ async def read_tarefa(tarefa_id: int, q: Optional[str] = None):
     selected = dbTarefas[tarefa_id]
     return selected
 
-# Mostra uma unica tarefa
-@app.get("/tarefa/teste")
-async def filter_tarefa():
-    fiil = dbTarefas[0]
-    return fiil
+# # Mostra uma unica tarefa
+# @app.get("/tarefa/teste")
+# async def filter_tarefa():
+#     fiil = dbTarefas[0]
+#     return fiil
 
 
 # Edita uma tarefa
@@ -56,7 +56,7 @@ async def create_tarefa(tarefa: Tarefa):
     return len(dbTarefas)
 
 # Apaga uma tarefa
-@app.delete("/tarefa/{tarefa_id}")
+@app.delete("/tarefa/apagar/{tarefa_id}")
 def delete_tarefa(tarefa_id: int):
     del(dbTarefas[tarefa_id])
     return dbTarefas
