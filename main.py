@@ -27,6 +27,8 @@ async def read_tarefa(tarefa_id: int, q: Optional[str] = None):
     selected = dbTarefas[tarefa_id]
     return selected
 
+@app.get("/tarefa/finalisada")
+async def 
 # # Mostra uma unica tarefa
 # @app.get("/tarefa/teste")
 # async def filter_tarefa():
