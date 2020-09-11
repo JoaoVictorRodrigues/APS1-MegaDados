@@ -7,15 +7,15 @@ app = FastAPI()
 
 
 class Tarefa(BaseModel):
-    id: int
+    titulo: str
     desTarefa: str
-    finalizado: bool
+    finalizado: bool = False
 
 dbTarefas = {}
 
 # Mostra todas as notas
-@app.get("/tarefas/")
-async def read_root():
+@app.get("/tarefas")
+async def read_root(finalizado: Optional[str] = None):
     if len(dbTarefas) == 0:
         return {"Insira novas tarefas"}
     else:
@@ -32,7 +32,7 @@ async def
 # # Mostra uma unica tarefa
 # @app.get("/tarefa/teste")
 # async def filter_tarefa():
-#     fiil = dbTarefas[0]
+#     fiil = dbTarefas[0][q = true]
 #     return fiil
 
 
@@ -49,12 +49,12 @@ async def update_tarefa(tarefa_id: int,tarefa: Tarefa):
 #Cria uma tarefa
 @app.post("/tarefa/nova")
 async def create_tarefa(tarefa: Tarefa):
+    cont=1
     if len(dbTarefas) == 0:
         dbTarefas[0]=tarefa
-    elif len(dbTarefas) in dbTarefas:
-        dbTarefas[len(dbTarefas)+1] = tarefa
     else:
-        dbTarefas[len(dbTarefas)] = tarefa
+        dbTarefas[cont] = tarefa
+        cont+=1
     return len(dbTarefas)
 
 # Apaga uma tarefa
