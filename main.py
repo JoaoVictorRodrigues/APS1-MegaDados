@@ -28,7 +28,18 @@ async def read_tarefa(tarefa_id: int, q: Optional[str] = None):
     return selected
 
 @app.get("/tarefa/finalisada")
-async def 
+async def listfinalizado():
+    if len(dbTarefas) == 0:
+        return {"erro 404: nenhuma tarefa"}
+    else:
+        dbFinalizados = {}
+        inc = 0
+        for i in dbTarefas:
+            if dbTarefas[i]["finalisada"]["True"]:
+                dbFinalizados[inc][finalisada]
+                inc+=1
+        return dbFinalizados
+                
 # # Mostra uma unica tarefa
 # @app.get("/tarefa/teste")
 # async def filter_tarefa():
