@@ -32,15 +32,13 @@ async def listfinalizado():
     if len(dbTarefas) == 0:
         return {"erro 404: nenhuma tarefa"}
     else:
-        if dbTarefas[0]["finalizado"] == true:
-            return {"ola mundo"}
-        # dbFinalizados = {}
-        # inc = 0
-        # for i in dbTarefas[i]:
-        #     if dbTarefas[i]["finalizado"] == :
-        #         dbFinalizados[inc][finalizado]
-        #         inc+=1
-        # return dbFinalizados
+        dbFinalizados = {}
+        inc = 0
+        for i in dbTarefas:
+            if dbTarefas[i]["finalisada"]["True"]:
+                dbFinalizados[inc][finalisada]
+                inc+=1
+        return dbFinalizados
                 
 # # Mostra uma unica tarefa
 # @app.get("/tarefa/teste")
