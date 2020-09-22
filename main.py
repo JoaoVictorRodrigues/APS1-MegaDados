@@ -15,7 +15,7 @@ class Tarefa(BaseModel):
 dbTarefas = {}
 
 # Mostra todas as notas
-@app.get("/tarefas")
+@app.get("/tarefa")
 async def read_all_tarefas(status: Optional[bool] = None):
     """ Mostra todas as tarefas. Use o status para filtrar as tarefas finalizadas/não finalizadas """
     if len(dbTarefas) == 0:
@@ -46,7 +46,7 @@ async def update_tarefa(tarefa_id: int, tarefa: Tarefa):
           dbTarefas[tarefa_id] = tarefa
     except KeyError as exception:
         raise HTTPException(
-            status_code = 404,
+            status_code = 422,
             detail='Task not found',
         ) from exception
 
