@@ -72,5 +72,11 @@ async def create_tarefa(tarefa: Tarefa):
 @app.delete("/tarefa/apagar/{tarefa_id}")
 async def delete_tarefa(tarefa_id: int):
     """ Deleta uma tarefa existente"""
-    del(dbTarefas[tarefa_id])
-    return dbTarefas
+    try:
+        del(dbTarefas[tarefa_id])
+        #return dbTarefas
+    except KeyError as exception:
+        raise HTTPException(
+            status_code=404,
+            detail='Task not found',
+        ) from exception
