@@ -12,7 +12,12 @@ class Tarefa(BaseModel):
     finalizado: bool = False
 
 
-dbTarefas = {}
+class DBSession:
+  dbTarefas = {}
+  def __init__(self):
+    self.tasks = DBSession.tasks
+  def get_db():
+    return DBSession()
 
 # Mostra todas as notas
 @app.get("/tarefas")
