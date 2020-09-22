@@ -1,29 +1,12 @@
+
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from api.database import DBSession, get_db
+from api.models import Tarefa
 
+router = APIRouter()
 
-app = FastAPI()
-
-
-class Tarefa(BaseModel):
-    titulo: str
-    desTarefa: str
-    finalizado: bool = False
-
-
-class DBSession:
-  dbTarefas = {}
-  def __init__(self):
-      self.tasks = DBSession.dbTarefas
-
-def get_db():
-  return DBSession()
-
-# Mostra todas as notas
-
-
-@app.get("/tarefa")
+@router.get("")
 async def read_all_tarefas(status: Optional[bool] = None, db: DBSession = Depends(get_db)):
     """ Mostra todas as tarefas. Use o status para filtrar as tarefas finalizadas/não finalizadas """
     if len(db.dbTarefas) == 0:
@@ -39,7 +22,7 @@ async def read_all_tarefas(status: Optional[bool] = None, db: DBSession = Depend
 
 
 # Mostra uma unica tarefa
-@app.get("/tarefa/{tarefa_id}")
+@router.get("/{tarefa_id}")
 async def read_single_tarefa(tarefa_id: int, q: Optional[str] = None, db: DBSession = Depends(get_db)):
     """ Mostra um unica tarefa """
     selected = db.dbTarefas[tarefa_id]
@@ -48,7 +31,7 @@ async def read_single_tarefa(tarefa_id: int, q: Optional[str] = None, db: DBSess
 # Edita uma tarefa
 
 
-@app.put("/tarefa/editar/{tarefa_id}")
+@router.put("/editar/{tarefa_id}")
 async def update_tarefa(tarefa_id: int, tarefa: Tarefa, db: DBSession = Depends(get_db)):
     """ Edita uma tarefa já existente """
     try:
@@ -62,7 +45,7 @@ async def update_tarefa(tarefa_id: int, tarefa: Tarefa, db: DBSession = Depends(
 
 
 # Cria uma tarefa
-@app.post("/tarefa/nova")
+@router.post("/nova")
 async def create_tarefa(tarefa: Tarefa, db: DBSession = Depends(get_db)):
     """ Cria uma nova tarefa"""
     try:
@@ -80,7 +63,7 @@ async def create_tarefa(tarefa: Tarefa, db: DBSession = Depends(get_db)):
 # Apaga uma tarefa
 
 
-@app.delete("/tarefa/apagar/{tarefa_id}")
+@router.delete("/apagar/{tarefa_id}")
 async def delete_tarefa(tarefa_id: int, db: DBSession = Depends(get_db)):
     """ Deleta uma tarefa existente"""
     try:
