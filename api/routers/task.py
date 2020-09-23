@@ -26,7 +26,7 @@ async def read_single_tarefa(tarefa_id: int, q: Optional[str] = None, db: DBSess
 @router.put("/editar/{tarefa_id}")
 async def update_tarefa(tarefa_id: int, tarefa: Tarefa, db: DBSession = Depends(get_db)):
     """ Edita uma tarefa já existente """
-    DBSession.metodo_editar(tarefa_id, tarefa)
+    return db.metodo_editar(tarefa_id, tarefa)
 
 
 # Cria uma tarefa
@@ -41,4 +41,4 @@ async def create_tarefa(tarefa: Tarefa, db: DBSession = Depends(get_db)):
 @router.delete("/apagar/{tarefa_id}")
 async def delete_tarefa(tarefa_id: int, db: DBSession = Depends(get_db)):
     """ Deleta uma tarefa existente"""
-    DBSession.metodo_delete(tarefa_id)
+    return db.metodo_delete(tarefa_id)
