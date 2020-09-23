@@ -1,8 +1,9 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
-from api.database import DBSession, get_db
-from api.models import Tarefa
+from ..database import DBSession, get_db
+from ..models import Tarefa
+
 
 router = APIRouter()
 
@@ -25,14 +26,7 @@ async def read_single_tarefa(tarefa_id: int, q: Optional[str] = None, db: DBSess
 @router.put("/editar/{tarefa_id}")
 async def update_tarefa(tarefa_id: int, tarefa: Tarefa, db: DBSession = Depends(get_db)):
     """ Edita uma tarefa já existente """
-    try:
-        if tarefa_id in db.dbTarefas:
-            db.dbTarefas[tarefa_id] = tarefa
-    except KeyError as exception:
-        raise HTTPException(
-            status_code=422,
-            detail='Task not found',
-        ) from exception
+    DBSession.metodo_editar(tarefa_id, tarefa)
 
 
 # Cria uma tarefa
@@ -47,11 +41,4 @@ async def create_tarefa(tarefa: Tarefa, db: DBSession = Depends(get_db)):
 @router.delete("/apagar/{tarefa_id}")
 async def delete_tarefa(tarefa_id: int, db: DBSession = Depends(get_db)):
     """ Deleta uma tarefa existente"""
-    try:
-        del(db.dbTarefas[tarefa_id])
-        # return db.dbTarefas
-    except KeyError as exception:
-        raise HTTPException(
-            status_code=404,
-            detail='Task not found',
-        ) from exception
+    DBSession.metodo_delete(tarefa_id)

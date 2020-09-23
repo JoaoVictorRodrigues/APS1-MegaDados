@@ -1,4 +1,5 @@
-from api.routers import task
+
+from .routers import task
 
 from fastapi import FastAPI
 
