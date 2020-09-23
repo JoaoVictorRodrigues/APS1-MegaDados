@@ -1,5 +1,7 @@
 from api.models import Tarefa
 from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+
 
 
 class DBSession:
@@ -20,7 +22,7 @@ class DBSession:
         else:
             return self.dbTarefas
 
-    def read_single_tarefa(self, tarefa_id: int, q: str):
+    def read_single_tarefa(self, tarefa_id: int):
         selected = self.dbTarefas[tarefa_id]
         return selected
 
