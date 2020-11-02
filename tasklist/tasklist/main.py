@@ -1,7 +1,7 @@
+# pylint: disable=missing-module-docstring
+from fastapi import FastAPI
 
 from .routers import task
-
-from fastapi import FastAPI
 
 app = FastAPI()
 
