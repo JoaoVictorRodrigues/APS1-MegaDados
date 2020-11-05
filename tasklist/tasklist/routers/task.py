@@ -1,44 +1,112 @@
+# pylint: disable=missing-module-docstring, missing-function-docstring, invalid-name
+import uuid
+
+from typing import Dict
 
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
-from ..database import DBSession, get_db
-from ..models import Tarefa
 
+from ..database import DBSession, get_db
+from ..models import Task
 
 router = APIRouter()
 
 
-@router.get("")
-async def read_all_tarefas(status: Optional[bool] = None, db: DBSession = Depends(get_db)):
-    """ Mostra todas as tarefas. Use o status para filtrar as tarefas finalizadas/não finalizadas """
-    return db.read_all_tarefas(status)
+@router.get(
+    '',
+    summary='Reads task list',
+    description='Reads the whole task list.',
+    response_model=Dict[uuid.UUID, Task],
+)
+async def read_tasks(completed: bool = None, db: DBSession = Depends(get_db)):
+    return db.read_tasks(completed)
 
 
-# Mostra uma unica tarefa
-@router.get("/{tarefa_id}")
-async def read_single_tarefa(tarefa_id: int, q: Optional[str] = None, db: DBSession = Depends(get_db)):
-    """ Mostra um unica tarefa """
-    return db.read_single_tarefa(tarefa_id)
-
-# Edita uma tarefa
-
-
-@router.put("/editar/{tarefa_id}")
-async def update_tarefa(tarefa_id: int, tarefa: Tarefa, db: DBSession = Depends(get_db)):
-    """ Edita uma tarefa já existente """
-    return db.metodo_editar(tarefa_id, tarefa)
+@router.post(
+    '',
+    summary='Creates a new task',
+    description='Creates a new task and returns its UUID.',
+    response_model=uuid.UUID,
+)
+async def create_task(item: Task, db: DBSession = Depends(get_db)):
+    return db.create_task(item)
 
 
-# Cria uma tarefa
-@router.post("/nova")
-async def create_tarefa(tarefa: Tarefa, db: DBSession = Depends(get_db)):
-    """ Cria uma nova tarefa"""
-    return db.create_tarefa(tarefa)
+@router.get(
+    '/{uuid_}',
+    summary='Reads task',
+    description='Reads task from UUID.',
+    response_model=Task,
+)
+async def read_task(uuid_: uuid.UUID, db: DBSession = Depends(get_db)):
+    try:
+        return db.read_task(uuid_)
+    except KeyError as exception:
+        raise HTTPException(
+            status_code=404,
+            detail='Task not found',
+        ) from exception
 
-# Apaga uma tarefa
+
+@router.put(
+    '/{uuid_}',
+    summary='Replaces a task',
+    description='Replaces a task identified by its UUID.',
+)
+async def replace_task(
+        uuid_: uuid.UUID,
+        item: Task,
+        db: DBSession = Depends(get_db),
+):
+    try:
+        db.replace_task(uuid_, item)
+    except KeyError as exception:
+        raise HTTPException(
+            status_code=404,
+            detail='Task not found',
+        ) from exception
 
 
-@router.delete("/apagar/{tarefa_id}")
-async def delete_tarefa(tarefa_id: int, db: DBSession = Depends(get_db)):
-    """ Deleta uma tarefa existente"""
-    return db.metodo_delete(tarefa_id)
+@router.patch(
+    '/{uuid_}',
+    summary='Alters task',
+    description='Alters a task identified by its UUID',
+)
+async def alter_task(
+        uuid_: uuid.UUID,
+        item: Task,
+        db: DBSession = Depends(get_db),
+):
+    try:
+        old_item = db.read_task(uuid_)
+        update_data = item.dict(exclude_unset=True)
+        new_item = old_item.copy(update=update_data)
+        db.replace_task(uuid_, new_item)
+    except KeyError as exception:
+        raise HTTPException(
+            status_code=404,
+            detail='Task not found',
+        ) from exception
+
+
+@router.delete(
+    '/{uuid_}',
+    summary='Deletes task',
+    description='Deletes a task identified by its UUID',
+)
+async def remove_task(uuid_: uuid.UUID, db: DBSession = Depends(get_db)):
+    try:
+        db.remove_task(uuid_)
+    except KeyError as exception:
+        raise HTTPException(
+            status_code=404,
+            detail='Task not found',
+        ) from exception
+
+
+@router.delete(
+    '',
+    summary='Deletes all tasks, use with caution',
+    description='Deletes all tasks, use with caution',
+)
+async def remove_all_tasks(db: DBSession = Depends(get_db)):
+    db.remove_all_tasks()

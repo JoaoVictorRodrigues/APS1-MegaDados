@@ -1,63 +1,138 @@
-from api.models import Tarefa
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
+# pylint: disable=missing-module-docstring, missing-function-docstring, missing-class-docstring
+import json
+import uuid
 
+from functools import lru_cache
+
+import mysql.connector as conn
+
+from fastapi import Depends
+
+from utils.utils import get_config_filename, get_app_secrets_filename
+
+from .models import Task
 
 
 class DBSession:
-    dbTarefas = {}
+    def __init__(self, connection: conn.MySQLConnection):
+        self.connection = connection
 
-    def __init__(self):
-        self.dbTarefas = DBSession.dbTarefas
-
-    def read_all_tarefas(self, status: bool):
-        if len(self.dbTarefas) == 0:
-            return {"msg": "Insira novas tarefas"}
-        elif status != None:
-            dbfiltrado = {}
-            for i in range(len(self.dbTarefas)):
-                if self.dbTarefas[i].finalizado == status:
-                    dbfiltrado[i] = self.dbTarefas[i]
-            return dbfiltrado
-        else:
-            return self.dbTarefas
-
-    def read_single_tarefa(self, tarefa_id: int):
-        selected = self.dbTarefas[tarefa_id]
-        return selected
-
-    def create_tarefa(self, tarefa: Tarefa):
-        try:
-            if len(self.dbTarefas) == 0:
-                self.dbTarefas[0] = tarefa
+    def read_tasks(self, completed: bool = None):
+        query = 'SELECT BIN_TO_UUID(uuid), description, completed FROM tasks'
+        if completed is not None:
+            query += ' WHERE completed = '
+            if completed:
+                query += 'True'
             else:
-                self.dbTarefas[max(self.dbTarefas.keys())+1] = tarefa
-            return len(self.dbTarefas)
-        except KeyError as exception:
-            raise HTTPException(
-                status_code=422,
-                detail='Unprocessable Entity',
-            ) from exception
+                query += 'False'
 
-    def metodo_editar(self, tarefa_id: int, tarefa: Tarefa):
-        try:
-            if tarefa_id in self.dbTarefas:
-                self.dbTarefas[tarefa_id] = tarefa
-        except KeyError as exception:
-            raise HTTPException(
-                status_code=422,
-                detail='Task not found',
-            ) from exception
+        with self.connection.cursor() as cursor:
+            cursor.execute(query)
+            db_results = cursor.fetchall()
 
-    def metodo_delete(self, tarefa_id: int):
-        try:
-            del(self.dbTarefas[tarefa_id])
-        except KeyError as exception:
-            raise HTTPException(
-                status_code=404,
-                detail='Task not found',
-            ) from exception
+        return {
+            uuid_: Task(
+                description=field_description,
+                completed=bool(field_completed),
+            )
+            for uuid_, field_description, field_completed in db_results
+        }
+
+    def create_task(self, item: Task):
+        uuid_ = uuid.uuid4()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                'INSERT INTO tasks VALUES (UUID_TO_BIN(%s), %s, %s)',
+                (str(uuid_), item.description, item.completed),
+            )
+        self.connection.commit()
+
+        return uuid_
+
+    def read_task(self, uuid_: uuid.UUID):
+        if not self.__task_exists(uuid_):
+            raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                '''
+                SELECT description, completed
+                FROM tasks
+                WHERE uuid = UUID_TO_BIN(%s)
+                ''',
+                (str(uuid_), ),
+            )
+            result = cursor.fetchone()
+
+        return Task(description=result[0], completed=bool(result[1]))
+
+    def replace_task(self, uuid_, item):
+        if not self.__task_exists(uuid_):
+            raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                '''
+                UPDATE tasks SET description=%s, completed=%s
+                WHERE uuid=UUID_TO_BIN(%s)
+                ''',
+                (item.description, item.completed, str(uuid_)),
+            )
+        self.connection.commit()
+
+    def remove_task(self, uuid_):
+        if not self.__task_exists(uuid_):
+            raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                'DELETE FROM tasks WHERE uuid=UUID_TO_BIN(%s)',
+                (str(uuid_), ),
+            )
+        self.connection.commit()
+
+    def remove_all_tasks(self):
+        with self.connection.cursor() as cursor:
+            cursor.execute('DELETE FROM tasks')
+        self.connection.commit()
+
+    def __task_exists(self, uuid_: uuid.UUID):
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                '''
+                SELECT EXISTS(
+                    SELECT 1 FROM tasks WHERE uuid=UUID_TO_BIN(%s)
+                )
+                ''',
+                (str(uuid_), ),
+            )
+            results = cursor.fetchone()
+            found = bool(results[0])
+
+        return found
 
 
-def get_db():
-    return DBSession()
+@lru_cache
+def get_credentials(
+        config_file_name: str = Depends(get_config_filename),
+        secrets_file_name: str = Depends(get_app_secrets_filename),
+):
+    with open(config_file_name, 'r') as file:
+        config = json.load(file)
+    with open(secrets_file_name, 'r') as file:
+        secrets = json.load(file)
+    return {
+        'user': secrets['user'],
+        'password': secrets['password'],
+        'host': config['db_host'],
+        'database': config['database'],
+    }
+
+
+def get_db(credentials: dict = Depends(get_credentials)):
+    try:
+        connection = conn.connect(**credentials)
+        yield DBSession(connection)
+    finally:
+        connection.close()
