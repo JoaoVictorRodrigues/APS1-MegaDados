@@ -1,6 +1,6 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring
 from typing import Optional
-import uuid
+from uuid import UUID
 
 from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
@@ -16,7 +16,7 @@ class Task(BaseModel):
         False,
         title='Shows whether the task was completed',
     )
-    user_id: uuid.UUID
+    user_id: UUID
 
     class Config:
         schema_extra = {
