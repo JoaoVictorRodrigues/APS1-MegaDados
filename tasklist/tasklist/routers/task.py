@@ -58,7 +58,7 @@ async def replace_task(
         db: DBSession = Depends(get_db),
  ):
     try:
-        db.replace_task(uuid_, item.description,item.completed)
+        db.replace_task(uuid_, item)
     except KeyError as exception:
         raise HTTPException(
             status_code=404,

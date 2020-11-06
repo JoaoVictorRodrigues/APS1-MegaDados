@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get(
-    '/user',
+    '',
     summary='Reads user list',
     description='Reads the whole user list.',
     response_model=Dict[uuid.UUID, User],
@@ -20,7 +20,7 @@ async def read_users(db: DBSession = Depends(get_db)):
     return db.read_users()
 
 @router.post(
-    '/user',
+    '',
     summary='Creates a new user',
     description='Creates a new task and returns its UUID.',
     response_model=uuid.UUID,
@@ -29,7 +29,7 @@ async def create_user(item: User, db: DBSession = Depends(get_db)):
     return db.create_user(item)
 
 @router.get(
-    '/user/{uuid_}',
+    '/{uuid_}',
     summary='Reads users',
     description='Reads users from UUID.',
     response_model=User,
@@ -44,7 +44,7 @@ async def read_user(uuid_: uuid.UUID, db: DBSession = Depends(get_db)):
         ) from exception
 
 @router.put(
-    '/user/{uuid_}',
+    '/{uuid_}',
     summary='Replaces a task',
     description='Replaces a task identified by its UUID.',
 )
@@ -62,7 +62,7 @@ async def replace_user(
         ) from exception
 
 @router.delete(
-    '/user/{uuid_}',
+    '/{uuid_}',
     summary='Deletes task',
     description='Deletes a task identified by its UUID',
 )

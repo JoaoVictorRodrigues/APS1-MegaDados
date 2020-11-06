@@ -72,13 +72,13 @@ class DBSession:
         return Task(description=result[0], completed=bool(result[1]), user_id=(result[2]) )
 
     def replace_task(self, uuid_, item):
-        if not self.__task_exists(uuid_):
-            raise KeyError()
+        # if not self.__task_exists(uuid_):
+        #     raise KeyError()
 
         with self.connection.cursor() as cursor:
             cursor.execute(
                 '''
-                UPDATE tasks SET description=%s, completed=%s,
+                UPDATE tasks SET description=%s, completed=%s
                 WHERE uuid=UUID_TO_BIN(%s)
                 ''',
                 (item.description, item.completed, str(uuid_)),
