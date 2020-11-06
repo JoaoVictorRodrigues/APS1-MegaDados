@@ -1,7 +1,7 @@
 # pylint: disable=missing-module-docstring
 from fastapi import FastAPI
 
-from .routers import task
+from .routers import task, user
 
 tags_metadata = [
     {
@@ -15,5 +15,5 @@ app = FastAPI(
     description='Task-list project for the **Megadados** course',
     openapi_tags=tags_metadata,
 )
-
+app.include_router(user.router,tags=['users'])
 app.include_router(task.router, prefix='/task', tags=['task'])

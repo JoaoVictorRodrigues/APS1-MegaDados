@@ -17,6 +17,8 @@ class DBSession:
     def __init__(self, connection: conn.MySQLConnection):
         self.connection = connection
 
+
+## Task query
     def read_tasks(self, completed: bool = None):
         query = 'SELECT BIN_TO_UUID(uuid), description, completed FROM tasks'
         if completed is not None:
@@ -112,19 +114,37 @@ class DBSession:
 
         return found
 
+
+## Users query
+
     def read_users(self):
         query = 'SELECT BIN_TO_UUID(uuid), nome FROM users'
 
         with self.connection.cursor() as cursor:
             cursor.execute(query)
-            db_users = cursor.fetchall()
+            db_results = cursor.fetchall()
 
         return {
-            uuid_: User(
-                nome =field_name,
+            uuid_: User(nome=field_nome)
+            for uuid_, field_nome in db_results
+          }
+
+    def read_user(self, uuid_: uuid.UUID):
+        if not self.__user_exists(uuid_):
+          raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                '''
+                SELECT nome
+                FROM users
+                WHERE uuid = UUID_TO_BIN(%s)
+                ''',
+                (str(uuid_), ),
             )
-            for uuid_, nome in db_results
-        }
+            result = cursor.fetchone()
+
+        return User(nome=result[0])
 
     def create_user(self, item: User):
         uuid_ = uuid.uuid4()
@@ -137,6 +157,43 @@ class DBSession:
         self.connection.commit()
 
         return uuid_
+
+    def replace_user(self, uuid_, item):
+        if not self.__user_exists(uuid_):
+          raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                'UPDATE users SET nome=%s WHERE uuid=UUID_TO_BIN(%s)',
+                (item.nome, str(uuid_)),
+            )
+        self.connection.commit()
+
+    def remove_user(self, uuid_):
+        if not self.__user_exists(uuid_):
+            raise KeyError()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                'DELETE FROM users WHERE uuid=UUID_TO_BIN(%s)',
+                (str(uuid_), ),
+            )
+        self.connection.commit()
+
+    def __user_exists(self, uuid_: uuid.UUID):
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                '''
+                SELECT EXISTS(
+                    SELECT 1 FROM users WHERE uuid=UUID_TO_BIN(%s)
+                )
+                ''',
+                (str(uuid_), ),
+            )
+            results = cursor.fetchone()
+            found = bool(results[0])
+
+        return found
 
 @lru_cache
 def get_credentials(
