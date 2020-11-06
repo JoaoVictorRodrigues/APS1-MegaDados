@@ -6,7 +6,7 @@ from typing import Dict
 from fastapi import APIRouter, HTTPException, Depends
 
 from ..database import DBSession, get_db
-from ..models import Task
+from ..models import Task, User
 
 router = APIRouter()
 
@@ -110,3 +110,22 @@ async def remove_task(uuid_: uuid.UUID, db: DBSession = Depends(get_db)):
 )
 async def remove_all_tasks(db: DBSession = Depends(get_db)):
     db.remove_all_tasks()
+
+@router.get(
+    '/user',
+    summary='Reads user list',
+    description='Reads the whole user list.',
+    response_model=Dict[uuid.UUID, User],
+)
+async def read_users(db: DBSession = Depends(get_db)):
+    return db.read_users()
+
+
+@router.post(
+    '/user',
+    summary='Creates a new user',
+    description='Creates a new task and returns its UUID.',
+    response_model=uuid.UUID,
+)
+async def create_user(item: User, db: DBSession = Depends(get_db)):
+    return db.create_user(item)

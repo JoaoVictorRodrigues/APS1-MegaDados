@@ -10,7 +10,7 @@ from fastapi import Depends
 
 from utils.utils import get_config_filename, get_app_secrets_filename
 
-from .models import Task
+from .models import Task, User
 
 
 class DBSession:
@@ -112,6 +112,31 @@ class DBSession:
 
         return found
 
+    def read_users(self):
+        query = 'SELECT BIN_TO_UUID(uuid), nome FROM users'
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(query)
+            db_users = cursor.fetchall()
+
+        return {
+            uuid_: User(
+                nome =field_name,
+            )
+            for uuid_, nome in db_results
+        }
+
+    def create_user(self, item: User):
+        uuid_ = uuid.uuid4()
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                'INSERT INTO users VALUES (UUID_TO_BIN(%s), %s)',
+                (str(uuid_), item.nome),
+            )
+        self.connection.commit()
+
+        return uuid_
 
 @lru_cache
 def get_credentials(

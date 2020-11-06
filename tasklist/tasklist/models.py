@@ -23,3 +23,18 @@ class Task(BaseModel):
                 'completed': False,
             }
         }
+class User(BaseModel):
+    nome: Optional[str] = Field(
+        'name',
+        title='Task description',
+        max_length=1024,
+    )
+
+
+    class Config:
+        schema_extra = {
+            'example': {
+                'description': 'Buy baby diapers',
+                'completed': False,
+            }
+        }
