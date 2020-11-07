@@ -16,7 +16,6 @@ app.dependency_overrides[utils.get_config_filename] = \
 def setup_database():
     scripts_dir = os.path.join(
         os.path.dirname(__file__),
-        '..',
         'database',
         'migrations',
     )
@@ -38,46 +37,96 @@ def test_read_tasks_with_no_task():
     assert response.status_code == 200
     assert response.json() == {}
 
+def test_read_users_with_no_user():
+    setup_database()
+    response = client.get('/user')
+    assert response.status_code == 200
+    assert response.json() == {}
+
+def test_create_and_read_some_users():
+    setup_database()
+    users = [
+        {
+            "nome": "jojo rodrigues"
+        },
+        {
+            "nome":"zeze fernando"
+        },
+    ]
+    expected_responses = [
+        {
+            "nome": "jojo rodrigues"
+        },
+        {
+            "nome":"zeze fernando"
+        },
+    ]
+    uuids = []
+    for user in users:
+        response = client.post("/user", json=user)
+        assert response.status_code == 200
+        uuids.append(response.json())
+        
+    def get_expected_responses_with_uuid(nome=None):
+        return {
+            uuid_: response
+            for uuid_, response in zip(uuids, expected_responses)
+            if nome is None or response['nome'] == nome
+        }
+    response = client.get('/user')
+    assert response.status_code == 200
+    assert response.json() == get_expected_responses_with_uuid()
 
 def test_create_and_read_some_tasks():
     setup_database()
     tasks = [
         {
             "description": "foo",
-            "completed": False
+            "completed": False,
+            "user_id": "c6465907-3a75-432e-89c4-9c920d531c8f"
         },
         {
             "description": "bar",
-            "completed": True
+            "completed": True,
+            "user_id": "c6465907-3a75-432e-89c4-9c920d531c8f"
         },
         {
-            "description": "baz"
+            "description": "baz",
+            "user_id": "c6465907-3a75-432e-89c4-9c920d531c8f"
         },
         {
-            "completed": True
+            "completed": True,
+            "user_id": "c6465907-3a75-432e-89c4-9c920d531c8f"
         },
-        {},
+        {
+            "user_id": "c6465907-3a75-432e-89c4-9c920d531c8f"
+        },
     ]
     expected_responses = [
         {
             'description': 'foo',
-            'completed': False
+            'completed': False,
+            'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'
         },
         {
             'description': 'bar',
-            'completed': True
+            'completed': True,
+            'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'
         },
         {
             'description': 'baz',
-            'completed': False
+            'completed': False,
+            'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'
         },
         {
             'description': 'no description',
-            'completed': True
+            'completed': True,
+            'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'
         },
         {
             'description': 'no description',
-            'completed': False
+            'completed': False,
+            'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'
         },
     ]
 
@@ -121,13 +170,13 @@ def test_substitute_task():
     setup_database()
 
     # Create a task.
-    task = {'description': 'foo', 'completed': False}
+    task = {'description': 'foo', 'completed': False, 'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'}
     response = client.post('/task', json=task)
     assert response.status_code == 200
     uuid_ = response.json()
 
     # Replace the task.
-    new_task = {'description': 'bar', 'completed': True}
+    new_task = {'description': 'bar', 'completed': True, 'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'}
     response = client.put(f'/task/{uuid_}', json=new_task)
     assert response.status_code == 200
 
@@ -140,18 +189,38 @@ def test_substitute_task():
     response = client.delete(f'/task/{uuid_}')
     assert response.status_code == 200
 
+def test_substitute_user():
+    setup_database()
+
+    user = {'nome': 'jojo rodrigues'}
+    response = client.post('/user', json=user)
+    assert response.status_code == 200
+    uuid_ = response.json()
+
+    new_user = {'nome': 'zeze fernando'}
+    response = client.put(f'/user/{uuid_}', json=new_user)
+    assert response.status_code == 200
+
+    response = client.get(f'/user/{uuid_}')
+    assert response.status_code == 200
+    assert response.json() == new_user
+
+    response = client.delete(f'/user/{uuid_}')
+    assert response.status_code == 200
+
+
 
 def test_alter_task():
     setup_database()
 
     # Create a task.
-    task = {'description': 'foo', 'completed': False}
+    task = {'description': 'foo', 'completed': False, 'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'}
     response = client.post('/task', json=task)
     assert response.status_code == 200
     uuid_ = response.json()
 
     # Replace the task.
-    new_task_partial = {'completed': True}
+    new_task_partial = {'completed': True, 'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'}
     response = client.patch(f'/task/{uuid_}', json=new_task_partial)
     assert response.status_code == 200
 
@@ -164,11 +233,36 @@ def test_alter_task():
     response = client.delete(f'/task/{uuid_}')
     assert response.status_code == 200
 
+def test_alter_user():
+    setup_database()
+
+    user = {'nome': 'jojo rodrigues'}
+    response = client.post('/user', json=user)
+    assert response.status_code == 200
+    uuid_ = response.json()
+
+    new_user_partial = {'nome': "zeze fernando"}
+    response = client.patch(f'/user/{uuid_}', json=new_user_partial)
+    assert response.status_code == 200
+
+    response = client.get(f'/user/{uuid_}')
+    assert response.status_code == 200
+    assert response.json() == {**user, **new_user_partial}
+
+    response = client.delete(f'/user/{uuid_}')
+    assert response.status_code == 200
+
 
 def test_read_invalid_task():
     setup_database()
 
     response = client.get('/task/invalid_uuid')
+    assert response.status_code == 422
+
+def test_read_invalid_user():
+    setup_database()
+
+    response = client.get('/user/invalid_uuid')
     assert response.status_code == 422
 
 
@@ -178,11 +272,22 @@ def test_read_nonexistant_task():
     response = client.get('/task/3668e9c9-df18-4ce2-9bb2-82f907cf110c')
     assert response.status_code == 404
 
+def user_read_nonexistant_user():
+    setup_database()
+
+    response = client.get('/user/9dfaab54-ea01-4f3f-97ec-6a69c8625277')
+    assert response.status_code == 404
 
 def test_delete_invalid_task():
     setup_database()
 
     response = client.delete('/task/invalid_uuid')
+    assert response.status_code == 422
+
+def test_delete_invalid_user():
+    setup_database()
+
+    response = client.delete('/user/invalid_uuid')
     assert response.status_code == 422
 
 
@@ -192,12 +297,17 @@ def test_delete_nonexistant_task():
     response = client.delete('/task/3668e9c9-df18-4ce2-9bb2-82f907cf110c')
     assert response.status_code == 404
 
+def test_delete_nonexistant_user():
+    setup_database()
+
+    response = client.delete('/user/9dfaab54-ea01-4f3f-97ec-6a69c8625277')
+    assert response.status_code == 404
 
 def test_delete_all_tasks():
     setup_database()
 
     # Create a task.
-    task = {'description': 'foo', 'completed': False}
+    task = {'description': 'foo', 'completed': False, 'user_id': 'c6465907-3a75-432e-89c4-9c920d531c8f'}
     response = client.post('/task', json=task)
     assert response.status_code == 200
     uuid_ = response.json()
@@ -213,5 +323,24 @@ def test_delete_all_tasks():
 
     # Check whether all tasks have been removed.
     response = client.get('/task')
+    assert response.status_code == 200
+    assert response.json() == {}
+
+def test_delete_all_users():
+    setup_database()
+
+    user = {'nome': 'zeze fernando'}
+    response = client.post('/user', json=user)
+    assert response.status_code == 200
+    uuid_ = response.json()
+
+    response = client.get('/user')
+    assert response.status_code == 200
+    assert response.json() == {uuid_: user}
+
+    response = client.delete('/user')
+    assert response.status_code == 200
+
+    response = client.get('/user')
     assert response.status_code == 200
     assert response.json() == {}
